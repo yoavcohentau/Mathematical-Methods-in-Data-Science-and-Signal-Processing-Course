@@ -1,12 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+np.random.seed(0)
+
 # Parameters
 n = 1000
 p = 10
 
 # Random vectors x1, x2
-np.random.seed(0)
 x1 = np.random.randn(p)
 x2 = np.random.randn(p)
 
