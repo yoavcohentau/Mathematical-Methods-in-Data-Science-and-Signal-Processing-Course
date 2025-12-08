@@ -11,7 +11,7 @@ p = 10
 x1 = np.random.randn(p)
 x2 = np.random.randn(p)
 
-# S values (logarithmic scale)
+# S values (log scale)
 S_values = np.logspace(0, 6, 30)  # from 1 to 10^6
 
 cov_eig_val_ratios = []
@@ -47,9 +47,6 @@ sing_val_ratios_log = np.log(sing_val_ratios)
 
 slope_eig = np.polyfit(S_values_log, cov_eig_val_ratios_log, 1)[0]
 slope_sing = np.polyfit(S_values_log, sing_val_ratios_log, 1)[0]
-
-print("Eigenvalue ratio slope (expected ≈ 2):", slope_eig)
-print("Singular value ratio slope (expected ≈ 1):", slope_sing)
 
 # Plot
 plt.figure()
