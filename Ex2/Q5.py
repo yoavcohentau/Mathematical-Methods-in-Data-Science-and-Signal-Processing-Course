@@ -74,38 +74,43 @@ k = 3
 
 
 # -- (i) pure k-means
+# apply k-means directly on data
 labels_km, I_km = apply_k_means(X, k)
 err_km_frob, acc_km_rate = test_performance(true_labels, labels_km)
 
-print("k-means accuracy rate:", acc_km_rate)
-print("k-means Frobenius error:", err_km_frob)
+print()
+print('----- Pure k-means method performance -----')
+print(f'k-means accuracy rate:      {acc_km_rate: .10f}')
+print(f'k-means Frobenius error:    {err_km_frob: .10f}')
 
 
 # -- (ii) spectral clustering
-# Gaussian kernel (local scale)
-# sigma = np.percentile(cdist(X, X), 20) / 10
+# create W using Gaussian kernel
 sigma = 0.6
+# sigma = np.percentile(cdist(X, X), 20) / 10
 W = np.exp(-cdist(X, X)**2 / (2 * sigma**2))
 np.fill_diagonal(W, 0)
 
-# Normalized Laplacian
+# create normalized-Laplacian
 D = np.diag(W.sum(axis=1))
 D_inv_sqrt = np.diag(1.0 / np.sqrt(np.maximum(np.diag(D), 1e-12)))
-L_sym = np.eye(n) - D_inv_sqrt @ W @ D_inv_sqrt
-# L_sym = D - W
+LG_norm = np.eye(n) - D_inv_sqrt @ W @ D_inv_sqrt
+# LG_norm = D - W
 
-# Eigen-decomposition
-eigvals, eigvecs = eigh(L_sym)
-# U = eigvecs[:, 1:k+1]     # skip trivial eigenvector
-V = eigvecs[:, 1:k]          # v_2,...,v_k
-U = np.matmul(D_inv_sqrt, V)
+# eigen-decomposition
+eigvals, eigvecs = eigh(LG_norm)
+# U = eigvecs[:, 1:k+1]
+V = eigvecs[:, 1:k]  # take v_2,...,v_k
+U = np.matmul(D_inv_sqrt, V)  # D^(-1/2) * v_m
 
 # apply k-means on eigen-vectors
 labels_spec, I_spec = apply_k_means(U, k)
 err_spec_frob, acc_spec_rate = test_performance(true_labels, labels_spec)
 
-print("Spectral accuracy rate:", acc_spec_rate)
-print("Spectral Frobenius error:", err_spec_frob)
+print()
+print('----- Spectral method performance -----')
+print(f'Spectral accuracy rate:      {acc_spec_rate: .10f}')
+print(f'Spectral Frobenius error:    {err_spec_frob: .10f}')
 
 
 # ------ PCA visualization ------
@@ -117,18 +122,18 @@ plt.figure(figsize=(12, 4))
 
 plt.subplot(1, 3, 1)
 plt.scatter(X_pca[:, 0], X_pca[:, 1], c=true_labels, cmap='tab10', s=15)
-plt.title("ground-truth clustering (PCA view)")
-plt.axis("equal")
+plt.title('ground-truth clustering')
+plt.axis('equal')
 
 plt.subplot(1, 3, 2)
 plt.scatter(X_pca[:, 0], X_pca[:, 1], c=labels_km, cmap='tab10', s=15)
-plt.title("k-means clustering (PCA view)")
-plt.axis("equal")
+plt.title(f'k-means clustering (error={err_km_frob: .5f})')
+plt.axis('equal')
 
 plt.subplot(1, 3, 3)
 plt.scatter(X_pca[:, 0], X_pca[:, 1], c=labels_spec, cmap='tab10', s=15)
-plt.title("Spectral clustering (PCA view)")
-plt.axis("equal")
+plt.title(f'Spectral clustering (error={err_spec_frob: .5f})')
+plt.axis('equal')
 
 plt.suptitle('Data in PCA view')
 plt.tight_layout()
