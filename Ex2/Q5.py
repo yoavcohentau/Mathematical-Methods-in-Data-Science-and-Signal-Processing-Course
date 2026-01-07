@@ -45,22 +45,19 @@ def labels_to_indicator(labels, k):
 
 # ------ k-means ------
 def apply_k_means(X, k=3):
-    best_distortion_km = np.inf
-    best_labels_km = None
-
+    min_distortion = np.inf
+    labels = None
     for _ in range(50):
-        centroids, labels = kmeans2(X, k, minit='++', iter=50)
+        centroids, current_labels = kmeans2(X, k, minit='++', iter=50)
 
-        current_distortion = np.sum((X - centroids[labels]) ** 2)
+        current_distortion = np.sum((X - centroids[current_labels]) ** 2)
+        if current_distortion < min_distortion:
+            min_distortion = current_distortion
+            labels = current_labels
 
-        if current_distortion < best_distortion_km:
-            best_distortion_km = current_distortion
-            best_labels_km = labels
+    I_km = labels_to_indicator(labels, k)
 
-    labels_km = best_labels_km
-    I_km = labels_to_indicator(labels_km, k)
-
-    return labels_km, I_km
+    return labels, I_km
 
 
 # ------ Simulation ------
@@ -76,19 +73,22 @@ k = 3
 
 
 # -- (i) pure k-means
-acc_km_rate_min = np.inf
-err_km_frob_min = np.inf
-labels_km_min = []
-for _ in range(50):
-    _, labels_km = kmeans2(X, k, minit='++', iter=50)
-    I_km = labels_to_indicator(labels_km, k)
+# acc_km_rate_min = np.inf
+# err_km_frob_min = np.inf
+# labels_km_min = []
+# for _ in range(50):
+#     _, labels_km = kmeans2(X, k, minit='++', iter=50)
+#     I_km = labels_to_indicator(labels_km, k)
+#
+#     err_km_frob, acc_km_rate = test_performance(true_labels, labels_km)
+#
+#     if err_km_frob < err_km_frob_min:
+#         labels_km_min = labels_km
+#         acc_km_rate_min = acc_km_rate
+#         err_km_frob_min = err_km_frob
 
-    err_km_frob, acc_km_rate = test_performance(true_labels, labels_km)
-
-    if err_km_frob < err_km_frob_min:
-        labels_km_min = labels_km
-        acc_km_rate_min = acc_km_rate
-        err_km_frob_min = err_km_frob
+labels_km_min, I_km = apply_k_means(X, k)
+err_km_frob_min, acc_km_rate_min = test_performance(true_labels, labels_km_min)
 
 print("k-means accuracy rate:", acc_km_rate_min)
 print("k-means Frobenius error:", err_km_frob_min)
@@ -112,20 +112,22 @@ eigvals, eigvecs = eigh(L_sym)
 V = eigvecs[:, 1:k]          # v_2,...,v_k
 U = np.matmul(D_inv_sqrt, V)
 
-acc_spec_rate_min = np.inf
-err_spec_frob_min = np.inf
-labels_spec_min = []
-for _ in range(50):
-    _, labels_spec = kmeans2(U, k, minit='++', iter=50)
-    I_spec = labels_to_indicator(labels_spec, k)
+# acc_spec_rate_min = np.inf
+# err_spec_frob_min = np.inf
+# labels_spec_min = []
+# for _ in range(50):
+#     _, labels_spec = kmeans2(U, k, minit='++', iter=50)
+#     I_spec = labels_to_indicator(labels_spec, k)
+#
+#     err_spec_frob, acc_spec_rate = test_performance(true_labels, labels_spec)
+#
+#     if err_spec_frob < err_spec_frob_min:
+#         labels_spec_min = labels_spec
+#         acc_spec_rate_min = acc_spec_rate
+#         err_spec_frob_min = err_spec_frob
 
-    err_spec_frob, acc_spec_rate = test_performance(true_labels, labels_spec)
-
-    if err_spec_frob < err_spec_frob_min:
-        labels_spec_min = labels_spec
-        acc_spec_rate_min = acc_spec_rate
-        err_spec_frob_min = err_spec_frob
-
+labels_spec_min, I_spec = apply_k_means(U, k)
+err_spec_frob_min, acc_spec_rate_min = test_performance(true_labels, labels_spec_min)
 
 print("Spectral accuracy rate:", acc_spec_rate_min)
 print("Spectral Frobenius error:", err_spec_frob_min)
