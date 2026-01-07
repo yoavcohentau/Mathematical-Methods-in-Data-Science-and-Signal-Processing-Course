@@ -80,8 +80,8 @@ err_km_frob, acc_km_rate = test_performance(true_labels, labels_km)
 
 print()
 print('----- Pure k-means method performance -----')
-print(f'k-means accuracy rate:      {acc_km_rate: .10f}')
 print(f'k-means Frobenius error:    {err_km_frob: .10f}')
+print(f'k-means accuracy rate:      {acc_km_rate: .10f}')
 
 
 # -- (ii) spectral clustering
@@ -109,8 +109,8 @@ err_spec_frob, acc_spec_rate = test_performance(true_labels, labels_spec)
 
 print()
 print('----- Spectral method performance -----')
-print(f'Spectral accuracy rate:      {acc_spec_rate: .10f}')
 print(f'Spectral Frobenius error:    {err_spec_frob: .10f}')
+print(f'Spectral accuracy rate:      {acc_spec_rate: .10f}')
 
 
 # ------ PCA visualization ------
