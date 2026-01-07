@@ -17,25 +17,10 @@ def test_performance(true_labels, pred_labels, k=3):
     for p in itertools.permutations(range(k)):
         frob_err.append(0.5 * np.linalg.norm(I_true - I_pred[:, p], 'fro'))
         mapped = np.array([p[l] for l in pred_labels])
-        acc.append(np.mean(mapped != true_labels))
+        acc.append(np.mean(mapped == true_labels))
     idx_min = np.argmin(frob_err)
 
     return frob_err[idx_min], acc[idx_min]
-
-
-def calc_accuracy_rate(true_labels, pred_labels):
-    best = np.inf
-    for p in itertools.permutations(range(k)):
-        mapped = np.array([p[l] for l in pred_labels])
-        best = min(best, np.mean(mapped != true_labels))
-    return best
-
-
-def frobenius_error(I_true, I_pred):
-    errs = []
-    for p in itertools.permutations(range(k)):
-        errs.append(0.5 * np.linalg.norm(I_true - I_pred[:, p], 'fro'))
-    return min(errs)
 
 
 # ------ utils ------
@@ -62,10 +47,23 @@ k = 3
 _, labels_km = kmeans2(X, k, minit='++', iter=50)
 I_km = labels_to_indicator(labels_km, k)
 
-err_km_rate = calc_accuracy_rate(true_labels, labels_km)
-err_km_frob = frobenius_error(I_true, I_km)
+err_km_frob, acc_km_rate = test_performance(true_labels, labels_km)
 
-print("k-means misclassification rate:", 1 - err_km_rate)
+acc_km_rate_min = np.inf
+err_km_frob_min = np.inf
+labels_km_min = []
+for _ in range(50):
+    _, labels_km = kmeans2(X, k, minit='++', iter=50)
+    I_km = labels_to_indicator(labels_km, k)
+
+    err_km_frob, acc_km_rate = test_performance(true_labels, labels_km)
+
+    if err_km_frob < err_km_frob_min:
+        labels_km_min = labels_km
+        acc_km_rate_min = acc_km_rate
+        err_km_frob_min = err_km_frob
+
+print("k-means accuracy rate:", acc_km_rate)
 print("k-means Frobenius error:", err_km_frob)
 
 
@@ -89,36 +87,23 @@ eigvals, eigvecs = eigh(L_sym)
 V = eigvecs[:, 1:k]          # v_2,...,v_k
 U = D_inv_sqrt @ V
 
-# Row normalization (CRITICAL)
-# U = U / np.linalg.norm(U, axis=1, keepdims=True)
-
-# k-means on spectral embedding
-# err_spec_frob = np.inf
-#
-# _, labels_spec = kmeans2(U, k, minit='++', iter=50)
-# I_spec = labels_to_indicator(labels_spec, k)
-#
-# err_spec_rate = misclassification_rate(true_labels, labels_spec)
-# err_spec_frob = frobenius_error(I_true, I_spec)
-
-err_spec_rate_min = np.inf
+acc_spec_rate_min = np.inf
 err_spec_frob_min = np.inf
 labels_spec_min = []
 for _ in range(50):
     _, labels_spec = kmeans2(U, k, minit='++', iter=50)
     I_spec = labels_to_indicator(labels_spec, k)
 
-    err_spec_rate = calc_accuracy_rate(true_labels, labels_spec)
-    err_spec_frob = frobenius_error(I_true, I_spec)
+    err_spec_frob, acc_spec_rate = test_performance(true_labels, labels_spec)
 
     if err_spec_frob < err_spec_frob_min:
         labels_spec_min = labels_spec
-        err_spec_rate_min = err_spec_rate
+        acc_spec_rate_min = acc_spec_rate
         err_spec_frob_min = err_spec_frob
 
 
-print("Spectral misclassification rate:", 1 - err_spec_rate)
-print("Spectral Frobenius error:", err_spec_frob)
+print("Spectral accuracy rate:", acc_spec_rate_min)
+print("Spectral Frobenius error:", err_spec_frob_min)
 
 
 
