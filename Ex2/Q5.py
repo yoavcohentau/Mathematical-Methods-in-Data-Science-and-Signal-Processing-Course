@@ -7,7 +7,7 @@ from sklearn.decomposition import PCA
 import itertools
 
 
-# # ------ performance metric ------
+# ------ performance metric ------
 def test_performance(true_labels, pred_labels, k=3):
     I_true = labels_to_indicator(true_labels, k)
     I_pred = labels_to_indicator(pred_labels, k)
@@ -44,12 +44,13 @@ def labels_to_indicator(labels, k):
 
 
 # ------ k-means ------
-def apply_k_means(X, k=3):
+def apply_k_means(X, k=3, n_trials=50, n_iters=50):
     min_distortion = np.inf
     labels = None
-    for _ in range(50):
-        centroids, current_labels = kmeans2(X, k, minit='++', iter=50)
+    for _ in range(n_trials):
+        centroids, current_labels = kmeans2(X, k, minit='++', iter=n_iters)
 
+        # save the min-distortion clustering
         current_distortion = np.sum((X - centroids[current_labels]) ** 2)
         if current_distortion < min_distortion:
             min_distortion = current_distortion
@@ -73,30 +74,17 @@ k = 3
 
 
 # -- (i) pure k-means
-# acc_km_rate_min = np.inf
-# err_km_frob_min = np.inf
-# labels_km_min = []
-# for _ in range(50):
-#     _, labels_km = kmeans2(X, k, minit='++', iter=50)
-#     I_km = labels_to_indicator(labels_km, k)
-#
-#     err_km_frob, acc_km_rate = test_performance(true_labels, labels_km)
-#
-#     if err_km_frob < err_km_frob_min:
-#         labels_km_min = labels_km
-#         acc_km_rate_min = acc_km_rate
-#         err_km_frob_min = err_km_frob
+labels_km, I_km = apply_k_means(X, k)
+err_km_frob, acc_km_rate = test_performance(true_labels, labels_km)
 
-labels_km_min, I_km = apply_k_means(X, k)
-err_km_frob_min, acc_km_rate_min = test_performance(true_labels, labels_km_min)
-
-print("k-means accuracy rate:", acc_km_rate_min)
-print("k-means Frobenius error:", err_km_frob_min)
+print("k-means accuracy rate:", acc_km_rate)
+print("k-means Frobenius error:", err_km_frob)
 
 
 # -- (ii) spectral clustering
 # Gaussian kernel (local scale)
-sigma = np.percentile(cdist(X, X), 20) / 10
+# sigma = np.percentile(cdist(X, X), 20) / 10
+sigma = 0.6
 W = np.exp(-cdist(X, X)**2 / (2 * sigma**2))
 np.fill_diagonal(W, 0)
 
@@ -112,32 +100,16 @@ eigvals, eigvecs = eigh(L_sym)
 V = eigvecs[:, 1:k]          # v_2,...,v_k
 U = np.matmul(D_inv_sqrt, V)
 
-# acc_spec_rate_min = np.inf
-# err_spec_frob_min = np.inf
-# labels_spec_min = []
-# for _ in range(50):
-#     _, labels_spec = kmeans2(U, k, minit='++', iter=50)
-#     I_spec = labels_to_indicator(labels_spec, k)
-#
-#     err_spec_frob, acc_spec_rate = test_performance(true_labels, labels_spec)
-#
-#     if err_spec_frob < err_spec_frob_min:
-#         labels_spec_min = labels_spec
-#         acc_spec_rate_min = acc_spec_rate
-#         err_spec_frob_min = err_spec_frob
+# apply k-means on eigen-vectors
+labels_spec, I_spec = apply_k_means(U, k)
+err_spec_frob, acc_spec_rate = test_performance(true_labels, labels_spec)
 
-labels_spec_min, I_spec = apply_k_means(U, k)
-err_spec_frob_min, acc_spec_rate_min = test_performance(true_labels, labels_spec_min)
-
-print("Spectral accuracy rate:", acc_spec_rate_min)
-print("Spectral Frobenius error:", err_spec_frob_min)
+print("Spectral accuracy rate:", acc_spec_rate)
+print("Spectral Frobenius error:", err_spec_frob)
 
 
+# ------ PCA visualization ------
 
-
-# ------------------------
-# PCA visualization
-# ------------------------
 pca = PCA(n_components=2)
 X_pca = pca.fit_transform(X)
 
@@ -149,12 +121,12 @@ plt.title("ground-truth clustering (PCA view)")
 plt.axis("equal")
 
 plt.subplot(1, 3, 2)
-plt.scatter(X_pca[:, 0], X_pca[:, 1], c=labels_km_min, cmap='tab10', s=15)
+plt.scatter(X_pca[:, 0], X_pca[:, 1], c=labels_km, cmap='tab10', s=15)
 plt.title("k-means clustering (PCA view)")
 plt.axis("equal")
 
 plt.subplot(1, 3, 3)
-plt.scatter(X_pca[:, 0], X_pca[:, 1], c=labels_spec_min, cmap='tab10', s=15)
+plt.scatter(X_pca[:, 0], X_pca[:, 1], c=labels_spec, cmap='tab10', s=15)
 plt.title("Spectral clustering (PCA view)")
 plt.axis("equal")
 
